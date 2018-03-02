@@ -212,38 +212,3 @@ func copyResponseBody(r *http.Response) ([]byte, error) {
 
 	return bs, nil
 }
-
-// hexdump formats bs sort of like xxd
-func hexdump(bs []byte) (formatted []byte) {
-	w := bytes.NewBuffer(formatted)
-
-	for i := 0; i < len(bs); i += 16 {
-		rowEnd := i + 16
-		if rowEnd > len(bs) {
-			rowEnd = len(bs)
-		}
-		row := bs[i:rowEnd]
-
-		offset := fmt.Sprintf("0x%08x:", i/16)
-		var cols []string
-		var ascii []byte
-		for j := 0; j < len(row); j += 2 {
-			colEnd := j + 2
-			if colEnd > len(row) {
-				colEnd = len(row)
-			}
-			cols = append(cols, fmt.Sprintf("%x", row[j:colEnd]))
-		}
-
-		for _, b := range row {
-			if 33 <= b && b <= 126 {
-				ascii = append(ascii, b)
-			} else {
-				ascii = append(ascii, '.')
-			}
-		}
-
-		fmt.Fprintf(w, "%s  %-039s  %s", offset, strings.Join(cols, " "), string(ascii))
-	}
-	return
-}
