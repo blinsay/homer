@@ -1,7 +1,7 @@
 ![image](https://user-images.githubusercontent.com/555011/36924998-d8d90354-1e3e-11e8-9e8d-9141cc375b95.png)
 
 
-A toy DNS-over-HTTP client. Don't use this.
+A toy [DNS-over-HTTP client](https://github.com/curl/curl/wiki/DNS-over-HTTPS). Don't use this.
 
 ```
 $ homer https://dns.google.com/experimental example.com
