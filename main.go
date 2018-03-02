@@ -38,7 +38,7 @@ func init() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "usage: %s [query flags] [endpoint] [names...]\n\n", os.Args[0])
-		fmt.Fprintf(flag.CommandLine.Output(), "%s makes a dns-over-https query to the given endpoint", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "%s makes a dns-over-https query to the given endpoint.\n\n", os.Args[0])
 		fmt.Fprintf(flag.CommandLine.Output(), "available options:\n")
 		flag.PrintDefaults()
 	}
