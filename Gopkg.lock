@@ -2,35 +2,14 @@
 
 
 [[projects]]
-  name = "github.com/miekg/dns"
-  packages = ["."]
-  revision = "5364553f1ee9cddc7ac8b62dce148309c386695b"
-  version = "v1.0.4"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/crypto"
-  packages = [
-    "ed25519",
-    "ed25519/internal/edwards25519"
-  ]
-  revision = "91a49db82a88618983a78a06c1cbd4e00ab749ab"
-
-[[projects]]
-  branch = "master"
+  branch = "release-branch.go1.11"
   name = "golang.org/x/net"
-  packages = [
-    "bpf",
-    "internal/iana",
-    "internal/socket",
-    "ipv4",
-    "ipv6"
-  ]
-  revision = "22ae77b79946ea320088417e4d50825671d82d57"
+  packages = ["dns/dnsmessage"]
+  revision = "c39426892332e1bb5ec0a434a079bf82f5d30c54"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7f5f127558bc8caa1a0989ed5a691ecfb9a63944f800217709dad14ed83905e9"
+  inputs-digest = "b642290bf9e8b7b2d1a018486a543173e93af669f1232cbfcb2b7d8e9044f84d"
   solver-name = "gps-cdcl"
   solver-version = 1
