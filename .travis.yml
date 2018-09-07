@@ -1,0 +1,20 @@
+language: go
+go:
+- '1.10'
+before_install:
+- go get github.com/golang/lint/golint
+- go get honnef.co/go/tools/cmd/unused
+- go get honnef.co/go/tools/cmd/staticcheck
+script:
+- make all
+before_deploy:
+- make cross
+deploy:
+  provider: releases
+  skip_cleanup: true
+  file: "build/*"
+  file_glob: true
+  on:
+    tags: true
+  api_key:
+    secure: eh35pv2iU19+GgoWrS9XrWJfoCellElD5k0AaYRFtPpi0Zb4s9SsWbqEk3RvSHCCMYhhEQPeToVEYJPz6q58xObv4a3y3P3YadkXg3AzGdeLdp3zGsVOXJS3LkYsHdwJFB9d0q9UkrqzZxNOVsxKTCffim5VetlERkNY4CQgtEL5gbMpgugeb5gY2QxNr5Irv0gEGwIlQSslcY3jPInGoH/jx+FG6OM15E3JElbS8YKsIG/Tct6o7QABhwkKuSAMA3rSzXKukVd33yq1BfiBKNpCfP6j0e6Yubuj8hynmO/YCm8k0Y5dbOdbIhIOwhrCtjpErxEw5NMam5uh+/5U0XZRZlkt+uhdi3so4YLVHZtBbx1V7SzAVF01CFED+rLK8bzzP/sNkAMGS8ynIr9D0LB9+Jj8npcio9wgwCwu91sI8pkHfQ7mOYV+ls1pB2KQtQSa/Yz1Ia34fUA38yJqRy/jcUCoDcqSyF/ZdJVneAeLC7JUq3mAyesmbD+0SQQj3WZzlTOpVIdNRkYStJqnY9XdEdWrWPYRORiyUI/340n8CPnrSMVM0qElkTrz2c/oC+ICHLte+uQSNjt8t8NSvA4SHy5lzKg0YRci8o8v+4B1WN+lwumnJXooEhq/aWpXMaBlRMl1lvm3eohqlUxpRmfx5qa1SUVSIqnoT9GJZtQ=
