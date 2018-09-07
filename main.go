@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/hex"
 	"flag"
 	"fmt"
@@ -54,6 +55,15 @@ var (
 		"SRV":   dnsmessage.TypeSRV,
 		"OPT":   dnsmessage.TypeOPT,
 	}
+)
+
+const (
+	schemeHTTPS           = "https"
+	headerAccept          = "Accept"
+	headerUserAgent       = "User-Agent"
+	headerContentType     = "Content-Type"
+	contentTypeDNSMessage = "application/dns-message"
+	queryParameterDNS     = "dns"
 )
 
 var (
@@ -170,6 +180,83 @@ func main() {
 	}
 }
 
+// pack a dns Message into a POST request. according to the RFC, POST requests
+// should include Accept: application/dns-message, and should set their
+// content-type appropriately
+func postRequest(resolverURL string, msg dnsmessage.Message) (*http.Request, error) {
+	bs, err := msg.Pack()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, resolverURL, bytes.NewBuffer(bs))
+	if err != nil {
+		return nil, err
+	}
+	if req.URL.Scheme != schemeHTTPS {
+		return nil, fmt.Errorf("dns-over-http requires https: url scheme is %q", req.URL.Scheme)
+	}
+
+	req.Header.Set(headerContentType, contentTypeDNSMessage)
+	req.Header.Set(headerAccept, contentTypeDNSMessage)
+
+	return req, nil
+}
+
+// pack a dns Message into a GET request. according to the RFC, GET requests
+// should include Accept: application/dns-message, and must base64 their request
+// into a "dns" query parameter
+func getRequest(resolverURL string, msg dnsmessage.Message) (*http.Request, error) {
+	bs, err := msg.Pack()
+	if err != nil {
+		return nil, err
+	}
+	encodedMessage := base64.RawURLEncoding.EncodeToString(bs)
+
+	req, err := http.NewRequest(http.MethodGet, resolverURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	if req.URL.Scheme != schemeHTTPS {
+		return nil, fmt.Errorf("dns-over-http requires https: url scheme is %q", req.URL.Scheme)
+	}
+
+	req.Header.Set(headerAccept, contentTypeDNSMessage)
+
+	query := req.URL.Query()
+	query.Set(queryParameterDNS, encodedMessage)
+	req.URL.RawQuery = query.Encode()
+
+	return req, nil
+}
+
+// parse a DNS response out of an http response body. returns an error if the
+// content-type isn't application/dns-message or if there is no body
+// to the response
+func dnsResponse(response *http.Response) (*dnsmessage.Message, error) {
+	if response.Body == nil {
+		return nil, fmt.Errorf("nil body")
+	}
+
+	if contentType := response.Header.Get(headerContentType); strings.ToLower(contentType) != contentTypeDNSMessage {
+		return nil, fmt.Errorf("dns-over-http: unregognized content type: %q", contentType)
+	}
+
+	defer response.Body.Close()
+	bs, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var msg dnsmessage.Message
+	if err := msg.Unpack(bs); err != nil {
+		return nil, err
+	}
+	return &msg, nil
+}
+
+// format a dns message header for output. looks a little bit like dig, with
+// less whitepsace
 func formatHeader(h dnsmessage.ResourceHeader) string {
 	typ := h.Type.String()
 	if strings.HasPrefix(typ, "Type") {
@@ -178,6 +265,7 @@ func formatHeader(h dnsmessage.ResourceHeader) string {
 	return fmt.Sprintf("%s %d %s", h.Name, h.TTL, typ)
 }
 
+// format a dns resource body for output. mimics dig's output where appropriate
 func formatBody(b dnsmessage.ResourceBody) string {
 	switch rr := b.(type) {
 	case *dnsmessage.AResource:
@@ -201,6 +289,8 @@ func formatBody(b dnsmessage.ResourceBody) string {
 	return "(unknown)"
 }
 
+// dump an http request as a string, including the body if present. buffers
+// the entire body into memory.handles replacing the body with a copy.
 func dumpRequest(request *http.Request) (string, error) {
 	requestBytes, err := httputil.DumpRequestOut(request, false)
 	if err != nil {
@@ -232,6 +322,8 @@ func dumpRequest(request *http.Request) (string, error) {
 	return headers, nil
 }
 
+// dump an http response as a string, including the body if present. buffers
+// the entire body into memory. handles replacing the body with a copy.
 func dumpResponse(response *http.Response) (string, error) {
 	bs, err := httputil.DumpResponse(response, false)
 	if err != nil {
