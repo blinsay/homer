@@ -14,6 +14,7 @@ import (
 const (
 	schemeHTTPS           = "https"
 	headerAccept          = "Accept"
+	headerUserAgent       = "User-Agent"
 	headerContentType     = "Content-Type"
 	contentTypeDNSMessage = "application/dns-message"
 )

@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/blinsay/homer/version"
 	"golang.org/x/net/dns/dnsmessage"
 )
 
@@ -27,8 +28,9 @@ var (
 	qclassArg = flag.String("class", "IN", "the `class` of record to query for. defaults to IN")
 
 	// output options
-	short    = flag.Bool("short", false, "provide a terse answer, like dig's +short")
-	dumpHTTP = flag.Bool("dump-http", false, "dumps http request/response headers")
+	printVersion = flag.Bool("version", false, "print the version and exit")
+	short        = flag.Bool("short", false, "provide a terse answer, like dig's +short")
+	dumpHTTP     = flag.Bool("dump-http", false, "dumps http request/response headers")
 )
 
 var (
@@ -54,6 +56,10 @@ var (
 	}
 )
 
+var (
+	userAgent = fmt.Sprintf("homer/%s", version.VERSION)
+)
+
 func init() {
 	log.SetFlags(0)
 
@@ -67,6 +73,11 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	if *printVersion {
+		log.Printf("%s (%s)", version.VERSION, version.GITCOMMIT)
+		return
+	}
 
 	if *resolver == "" {
 		log.Fatalf("--resolver is required")
@@ -120,7 +131,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("error building request:", err)
 	}
-	request.Header.Set("User-Agent", "github.com/blinsay/homer")
+	request.Header.Set(headerUserAgent, userAgent)
 
 	if *dumpHTTP {
 		reqDump, err := dumpRequest(request)
