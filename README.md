@@ -44,5 +44,5 @@ Run `homer --help` for usage info.
 
 ### building
 
-Build `homer` with a working Go toolchain and `make install`.
+Build `homer` with a working Go toolchain and `go get github.com/blinsay/homer`
 
