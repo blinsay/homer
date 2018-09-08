@@ -25,8 +25,8 @@ var (
 	resolver = flag.String("resolver", "", "the url of the dns-over-https resolver to use")
 
 	// query options
-	qtypeArg  = flag.String("type", "A", "the `type` of record to query for. defaults to A")
-	qclassArg = flag.String("class", "IN", "the `class` of record to query for. defaults to IN")
+	qtypeArg  = flag.String("type", "A", "the `type` of record to query for.")
+	qclassArg = flag.String("class", "IN", "the `class` of record to query for.")
 
 	// output options
 	printVersion = flag.Bool("version", false, "print the version and exit")
@@ -167,7 +167,7 @@ func main() {
 	if response.StatusCode == 200 {
 		msg, err := dnsResponse(response)
 		if err != nil {
-			log.Fatal("error parsing dns-over-http response:", err)
+			log.Fatalf("error parsing response from server: %s", err)
 		}
 
 		for _, answer := range msg.Answers {
@@ -194,7 +194,7 @@ func postRequest(resolverURL string, msg dnsmessage.Message) (*http.Request, err
 		return nil, err
 	}
 	if req.URL.Scheme != schemeHTTPS {
-		return nil, fmt.Errorf("dns-over-http requires https: url scheme is %q", req.URL.Scheme)
+		return nil, fmt.Errorf("dns-over-https requires https: url scheme is %q", req.URL.Scheme)
 	}
 
 	req.Header.Set(headerContentType, contentTypeDNSMessage)
@@ -218,7 +218,7 @@ func getRequest(resolverURL string, msg dnsmessage.Message) (*http.Request, erro
 		return nil, err
 	}
 	if req.URL.Scheme != schemeHTTPS {
-		return nil, fmt.Errorf("dns-over-http requires https: url scheme is %q", req.URL.Scheme)
+		return nil, fmt.Errorf("dns-over-https requires https: url scheme is %q", req.URL.Scheme)
 	}
 
 	req.Header.Set(headerAccept, contentTypeDNSMessage)
@@ -239,13 +239,17 @@ func dnsResponse(response *http.Response) (*dnsmessage.Message, error) {
 	}
 
 	if contentType := response.Header.Get(headerContentType); strings.ToLower(contentType) != contentTypeDNSMessage {
-		return nil, fmt.Errorf("dns-over-http: unregognized content type: %q", contentType)
+		return nil, fmt.Errorf("unrecognized content type: %q", contentType)
 	}
 
 	defer response.Body.Close()
 	bs, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(bs) == 0 {
+		return nil, fmt.Errorf("body was empty")
 	}
 
 	var msg dnsmessage.Message

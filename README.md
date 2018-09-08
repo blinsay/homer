@@ -1,4 +1,4 @@
-A toy [dns-over-http (doh) client](https://github.com/curl/curl/wiki/DNS-over-HTTPS).
+A toy [dns-over-https (doh) client](https://github.com/curl/curl/wiki/DNS-over-HTTPS).
 
 ![image](https://user-images.githubusercontent.com/555011/36924998-d8d90354-1e3e-11e8-9e8d-9141cc375b95.png)
 
@@ -10,7 +10,14 @@ blinsay.com. 1190 A 185.199.111.153
 blinsay.com. 1190 A 185.199.108.153
 ```
 
-Homer is educational, and can dump the full dns-over-http request/response.
+Get it from the [releases](https://github.com/blinsay/homer/releases) page.
+Run `homer --help` for usage info.
+
+The `curl` GitHub wiki has a list of
+[public resolvers](https://github.com/curl/curl/wiki/DNS-over-HTTPS#publicly-available-servers)
+for querying.
+
+`homer` can dump the full dns-over-https request/response for you to examine.
 
 ```
 $ homer --dump-http --resolver https://dns.google.com/experimental blinsay.com
@@ -37,9 +44,6 @@ blinsay.com. 1199 A 185.199.111.153
 blinsay.com. 1199 A 185.199.108.153
 blinsay.com. 1199 A 185.199.109.153
 ```
-
-Get it from the [releases](https://github.com/blinsay/homer/releases) page.
-Run `homer --help` for usage info.
 
 
 ### building
