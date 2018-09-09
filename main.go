@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"flag"
@@ -14,15 +15,19 @@ import (
 	"net/http/httputil"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/blinsay/homer/version"
 	"golang.org/x/net/dns/dnsmessage"
+	"golang.org/x/net/http2"
 )
 
 var (
 	// dns-over-https options
-	post     = flag.Bool("post", false, "use a POST request to make a query. slightly smaller, but less cache friendly")
-	resolver = flag.String("resolver", "", "the url of the dns-over-https resolver to use")
+	post              = flag.Bool("post", false, "use a POST request to make a query. slightly smaller, but less cache friendly")
+	resolver          = flag.String("resolver", "", "the url of the dns-over-https resolver to use")
+	bootstrapResolver = flag.String("bootstrap-resolver", "", "the ip address of a dns resolver to to find a dns-over-https resolver")
+	noBootstrap       = flag.Bool("no-bootstrap", false, "don't make a dns query to find the address of the given dns-over-https resolver")
 
 	// query options
 	qtypeArg  = flag.String("type", "A", "the `type` of record to query for.")
@@ -92,6 +97,9 @@ func main() {
 	if *resolver == "" {
 		log.Fatalf("--resolver is required")
 	}
+	if *noBootstrap && (*bootstrapResolver != "") {
+		log.Fatalf("--no-bootstrap and --bootstrap-resolver are incompatible! pick one")
+	}
 
 	qclass, ok := stringToClass[strings.ToUpper(*qclassArg)]
 	if !ok {
@@ -104,9 +112,58 @@ func main() {
 		log.Fatalf("unrecognized query type: %s", *qtypeArg)
 	}
 
-	// TODO(benl): customize the bootstrap resolver for the dns-over-https server
-	// TODO(benl): force http2?
-	client := http.Client{}
+	// configure an http client to use for dns-over-https.
+	//
+	// without specifying any special dns bootstrap, the client should use a
+	// transport that looks as close to http.DefaultTransport as possible.
+	//
+	// when a client disiables bootstrap dns, the Dialer's Resolver is set to
+	// a resolver that always errors on Dial.
+	//
+	// when a client sets up a custom bootstrap dns server, the Dialer's Resovler
+	// is set to always connect to the custom resolver, regardless of the
+	// address passed to dial.
+	dialer := net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+		DualStack: true,
+	}
+	if *noBootstrap {
+		dialer.Resolver = &net.Resolver{
+			PreferGo: true,
+			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+				return nil, fmt.Errorf("bootstrap dns is diabled")
+			},
+		}
+	}
+
+	if *bootstrapResolver != "" {
+		if parsed := net.ParseIP(*bootstrapResolver); parsed == nil {
+			log.Fatalf("boostrap-resolver must be a valid IP address")
+		}
+
+		bootstrapResolverAddress := net.JoinHostPort(*bootstrapResolver, "53")
+		dialer.Resolver = &net.Resolver{
+			PreferGo: true,
+			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+				var d net.Dialer
+				return d.DialContext(ctx, network, bootstrapResolverAddress)
+			},
+		}
+	}
+
+	transport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+	if err := http2.ConfigureTransport(transport); err != nil {
+		panic(fmt.Sprintf("unable to setup http2: %s", err))
+	}
+	client := http.Client{Transport: transport}
 
 	// per the RFC, application/dns-message requests should use a message id of
 	// zero for cache friendliness.
