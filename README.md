@@ -51,10 +51,10 @@ blinsay.com. 1199 A 185.199.108.153
 blinsay.com. 1199 A 185.199.109.153
 ```
 
-Most of the currently active public resolvers still specify themselves by name.
-Since the whole point of dns-over-https is privacy and security, you can
-specify the ip address of a resolver you trust to resolve the name of the
-dns-over-https resolver for you.
+Sometimes you don't know the IP address of the resolver you want to use and
+need to look it up using... DNS. Since dns-over-https is about privacy and
+security, `homer` lets you specify a DNS resolver you trust to do that initial
+lookup, rather than delegating to your operating system.
 
 ```
 $ ./homer --bootstrap-resolver 1.1.1.1 --resolver https://dns.google.com/experimental github.com
@@ -63,7 +63,7 @@ github.com. 59 A 192.30.253.112
 ```
 
 Using the `--no-bootstrap` option, you can opt out of the process entirely,
-and make sure you're passing an ip address as a resolver.
+and make sure you're never using that untrustworthy operating system resolver.
 
 
 ### building and running
