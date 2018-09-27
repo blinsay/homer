@@ -4,12 +4,39 @@
 [[projects]]
   branch = "release-branch.go1.11"
   name = "golang.org/x/net"
-  packages = ["dns/dnsmessage"]
+  packages = [
+    "dns/dnsmessage",
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna"
+  ]
   revision = "c39426892332e1bb5ec0a434a079bf82f5d30c54"
+
+[[projects]]
+  name = "golang.org/x/text"
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable"
+  ]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b642290bf9e8b7b2d1a018486a543173e93af669f1232cbfcb2b7d8e9044f84d"
+  inputs-digest = "57423b75afcfd4a27d728950c95e5bdcad3c62fca765cfe2054531227caa8173"
   solver-name = "gps-cdcl"
   solver-version = 1
