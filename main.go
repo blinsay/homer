@@ -27,7 +27,6 @@ var (
 	post              = flag.Bool("post", false, "use a POST request to make a query. slightly smaller, but less cache friendly")
 	resolver          = flag.String("resolver", "", "the url of a dns-over-https resolver to use")
 	bootstrapResolver = flag.String("bootstrap-resolver", "", "the ip address of a dns resolver to use to bootstrap the address of the dns-over-https resolver")
-	noBootstrap       = flag.Bool("no-bootstrap", false, "don't do any name resolution for the dns-over-https resolver")
 
 	// query options
 	qtypeArg  = flag.String("type", "A", "the `type` of record to query for.")
@@ -97,9 +96,6 @@ func main() {
 	if *resolver == "" {
 		log.Fatalf("--resolver is required")
 	}
-	if *noBootstrap && (*bootstrapResolver != "") {
-		log.Fatalf("--no-bootstrap and --bootstrap-resolver are incompatible")
-	}
 
 	qclass, ok := stringToClass[strings.ToUpper(*qclassArg)]
 	if !ok {
@@ -114,27 +110,24 @@ func main() {
 
 	// configure an http client to use for dns-over-https.
 	//
-	// without specifying any special dns bootstrap, the client should use a
-	// transport that looks as close to http.DefaultTransport as possible.
+	// to avoid using DNS to build the resolver we're using because we don't trust
+	// DNS, the transport is configured with a net.Resolver that will cowardly
+	// refuse to do anything.
 	//
-	// when a client disiables bootstrap dns, the Dialer's Resolver will always
-	// return an error when Dial is called.
-	//
-	// when a client sets up a custom bootstrap dns server, the Dialer's Resovler
-	// will always connect to the custom resolver, regardless of the address
-	// passed to Dial.
+	// if a user specifies a custom bootstrap dns server by IP address that they
+	// trust to locate their DoH resolver, replace the cowardly net.Resolver with
+	// one that always connects to the bootstrap IP.
 	dialer := net.Dialer{
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
 		DualStack: true,
-	}
-	if *noBootstrap {
-		dialer.Resolver = &net.Resolver{
+		Resolver: &net.Resolver{
 			PreferGo: true,
 			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-				return nil, fmt.Errorf("bootstrap dns is diabled")
+				log.Fatal("bootstrapping DNS is disabled unless --bootstrap-resolver is specified", address)
+				panic("never dial")
 			},
-		}
+		},
 	}
 
 	if *bootstrapResolver != "" {
