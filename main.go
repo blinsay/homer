@@ -319,10 +319,7 @@ func dnsResponse(response *http.Response) (*dnsmessage.Message, error) {
 // format a dns message header for output. looks a little bit like dig, with
 // less whitepsace
 func formatHeader(h dnsmessage.ResourceHeader) string {
-	typ := h.Type.String()
-	if strings.HasPrefix(typ, "Type") {
-		typ = typ[4:]
-	}
+	typ := strings.TrimPrefix(h.Type.String(), "Type")
 	return fmt.Sprintf("%s %d %s", h.Name, h.TTL, typ)
 }
 

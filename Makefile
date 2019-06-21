@@ -14,7 +14,7 @@ GO_LDFLAGS=-ldflags "$(VERSION_FLAGS)"
 GO_LDFLAGS_STATIC=-ldflags "$(VERSION_FLAGS) -extldflags -static"
 
 .PHONY: all
-all: clean build fmt lint test unused staticcheck install
+all: clean build fmt lint test staticcheck install
 
 # build and install
 
@@ -81,13 +81,8 @@ vet:
 	@echo "+$@"
 	@go vet ./... | grep -v vendor | tee /dev/stderr
 
-.PHONY: unused
-unused:
-	@echo "+$@"
-	@unused ./... | grep -v vendor | tee /dev/stderr
-
 .PHONY: staticcheck
 staticcheck:
 	@echo "+$@"
-	@staticcheck ./... | grep -v vendor | tee /dev/stderr
+	@staticcheck ./...
 
